@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>Monkey Search</title>
+   <script src="https://cdn.tailwindcss.com"></script>
+   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet"/>
+   <style>
+       #jumpScare {
+           display: none;
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100vw;
+           height: 100vh;
+           object-fit: cover;
+           z-index: 9999;
+       }
+   </style>
+</head>
+<body class="bg-white text-gray-800">
+   <div class="flex justify-between items-center p-4">
+       <div class="flex space-x-4">
+           <a class="text-sm text-gray-700" href="#">About</a>
+           <a class="text-sm text-gray-700" href="#">Monkey Store</a>
+       </div>
+       <div class="flex space-x-4 items-center">
+           <a class="text-sm text-gray-700" href="#">Gmail</a>
+           <a class="text-sm text-gray-700" href="#">Images</a>
+           <i class="fas fa-th text-gray-700"></i>
+           <button class="bg-blue-600 text-white px-4 py-2 rounded">Sign in</button>
+       </div>
+   </div>
+   <div class="flex flex-col items-center mt-24">
+       <img alt="Monkey logo" class="w-72 h-24" src="https://media.discordapp.net/attachments/984632424610824222/1257454440852623380/wolfram9210_funky_monkey_in_SpongeBob_style_ba80f283-50ef-488b-b959-ac8e1007dcb5.png?ex=66847735&is=668325b5&hm=987d8d5bc0401fe2cb7f0eaea0c65715d7065d7362fd48ac1b4128e607627ab7&"/>
+       <div class="flex items-center mt-8 w-full max-w-xl">
+           <input id="searchInput" class="border border-gray-300 rounded-full w-full py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-600" placeholder="Search" type="text"/>
+           <i class="fas fa-search text-gray-500 ml-4"></i>
+       </div>
+       <div class="flex space-x-4 mt-8">
+           <button id="searchButton" class="bg-gray-100 text-gray-700 px-4 py-2 rounded">Monkey Search</button>
+           <button id="luckyButton" class="bg-gray-100 text-gray-700 px-4 py-2 rounded">I'm Feeling Bananas</button>
+       </div>
+   </div>
+   <canvas id="gameCanvas" class="hidden absolute top-0 left-0 w-full h-full"></canvas>
+   <img id="jumpScare" src="https://media.discordapp.net/attachments/984632424610824222/1257454440852623380/wolfram9210_funky_monkey_in_SpongeBob_style_ba80f283-50ef-488b-b959-ac8e1007dcb5.png?ex=66847735&is=668325b5&hm=987d8d5bc0401fe2cb7f0eaea0c65715d7065d7362fd48ac1b4128e607627ab7&" alt="Jump Scare Monkey">
+   <audio id="scareSound" src="/Users/josephsocarras/Music/Music/Media.localized/The Lone Ranger/Unknown Album/TheLoneRanger51-07-162886TheRedMark.mp3"></audio>
+   <script>
+       const canvas = document.getElementById('gameCanvas');
+       const ctx = canvas.getContext('2d');
+       const searchInput = document.getElementById('searchInput');
+       const searchButton = document.getElementById('searchButton');
+       const luckyButton = document.getElementById('luckyButton');
+       const jumpScare = document.getElementById('jumpScare');
+       const scareSound = document.getElementById('scareSound');
+
+       let paddleHeight, paddleWidth, ballRadius, leftPaddleY, rightPaddleY, ballX, ballY, ballSpeedX, ballSpeedY;
+
+       function initGame() {
+           canvas.width = window.innerWidth;
+           canvas.height = window.innerHeight;
+           paddleHeight = 100;
+           paddleWidth = 10;
+           ballRadius = 10;
+           leftPaddleY = rightPaddleY = (canvas.height - paddleHeight) / 2;
+           ballX = canvas.width / 2;
+           ballY = canvas.height / 2;
+           ballSpeedX = 5;
+           ballSpeedY = 5;
+       }
+
+       function drawPaddle(x, y) {
+           ctx.fillStyle = '#000';
+           ctx.fillRect(x, y, paddleWidth, paddleHeight);
+       }
+
+       function drawBall() {
+           ctx.beginPath();
+           ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+           ctx.fillStyle = '#000';
+           ctx.fill();
+           ctx.closePath();
+       }
+
+       function drawFloor() {
+           ctx.fillStyle = '#000';
+           ctx.font = '20px Arial';
+           ctx.fillText(searchInput.value, 10, canvas.height - 10);
+       }
+
+       function update() {
+           ctx.clearRect(0, 0, canvas.width, canvas.height);
+           
+           ballX += ballSpeedX;
+           ballY += ballSpeedY;
+
+           if (ballY + ballRadius > canvas.height || ballY - ballRadius < 0) {
+               ballSpeedY = -ballSpeedY;
+           }
+
+           if (ballX + ballRadius > canvas.width) {
+               if (ballY > rightPaddleY && ballY < rightPaddleY + paddleHeight) {
+                   ballSpeedX = -ballSpeedX;
+               } else {
+                   ballX = canvas.width / 2;
+                   ballY = canvas.height / 2;
+               }
+           }
+
+           if (ballX - ballRadius < paddleWidth) {
+               if (ballY > leftPaddleY && ballY < leftPaddleY + paddleHeight) {
+                   ballSpeedX = -ballSpeedX;
+               } else {
+                   ballX = canvas.width / 2;
+                   ballY = canvas.height / 2;
+               }
+           }
+
+           rightPaddleY = ballY - paddleHeight / 2;
+
+           drawPaddle(0, leftPaddleY);
+           drawPaddle(canvas.width - paddleWidth, rightPaddleY);
+           drawBall();
+           drawFloor();
+
+           requestAnimationFrame(update);
+       }
+
+       function startGame() {
+           canvas.classList.remove('hidden');
+           initGame();
+           update();
+           canvas.addEventListener('mousemove', (e) => {
+               leftPaddleY = e.clientY - paddleHeight / 2;
+           });
+       }
+
+       function triggerJumpScare() {
+           jumpScare.style.display = 'block';
+           scareSound.play();
+           setTimeout(() => {
+               jumpScare.style.display = 'none';
+               startGame();
+           }, 500);
+       }
+
+       searchButton.addEventListener('click', triggerJumpScare);
+       luckyButton.addEventListener('click', startGame);
+   </script>
+</body>
+</html>
